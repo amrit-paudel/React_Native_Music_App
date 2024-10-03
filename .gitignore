@@ -10,4 +10,3 @@ server/.env
 # Ignore the inner musicapp folder's .git and node_modules folders
 musicapp/.git/
 musicapp/node_modules/
-
