@@ -1,0 +1,3 @@
+[submodule "musicapp"]
+	path = musicapp
+	url = https://github.com/amrit-paudel/musicapp.git
