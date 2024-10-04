@@ -2,8 +2,12 @@
 // Simply importing express library
 const express = require("express")
 
+// const fetch = require('node-fetch');
+
+
 // making an express server app
 const app = express();
+
 
 // importing cors
 const cors = require("cors")
@@ -157,6 +161,126 @@ app.post('/verify-token', (req, res) => {
         return res.status(200).json({ isValid: true, userId: decoded.userId, email: decoded.email });
     });
 });
+
+
+
+const redis = require('redis');
+// use of redis for caching 
+
+// Create Redis client
+const redisClient = redis.createClient({
+    socket: {
+        host: '127.0.0.1', // Default is localhost
+        port: 6379 // Default Redis port
+    }
+});
+
+// Handle connection and error events
+redisClient.on('connect', () => {
+    console.log('Connected to Redis');
+});
+
+redisClient.on('error', (err) => {
+    console.error('Redis error:', err);
+});
+
+
+// Connect to Redis and make sure connection is established
+(async () => {
+    await redisClient.connect();  // Ensure connection before performing operations
+})();
+
+
+
+// ROUTES FOR HANDLING DEEZER API
+
+app.get('/api/music/nepalese', async (req, res) => {
+    const cacheKey = 'deezer_music_data_nepalese';
+
+    try {
+        // Check if data exists in Redis cache
+        const cachedData = await redisClient.get(cacheKey);
+
+        if (cachedData) {
+            // Cache hit
+            console.log('Cache hit:', cacheKey);
+            return res.json(JSON.parse(cachedData)); // Return cached data
+        }
+
+        // Cache miss, fetch from Deezer API
+        console.log('Cache miss:', cacheKey);
+
+        const response = await fetch('https://api.deezer.com/chart');
+        const deezerData = await response.json();
+
+        // Extract necessary data
+        const musicData = deezerData.tracks.data.map(track => ({
+            id: track.id,
+            title: track.title,
+            description: track.artist.name,
+            image: track.album.cover_medium
+        }));
+
+        console.log("deezerData: ", musicData); // DEBUG
+
+        // Store data in Redis cache with expiration time (1 hour)
+        await redisClient.setEx(cacheKey, 3600, JSON.stringify(musicData));
+
+        // Return the fresh data
+        res.json(musicData);
+
+    } catch (error) {
+        console.error('Error fetching or caching data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+// app.get('/api/music/nepalese', async (req, res) => {
+//     const cacheKey = 'deezer_music_data_nepalese';
+
+//     redisClient.get(cacheKey, async (err, data) => {
+//         if (err) {
+//             console.error('Redis GET error:', err);
+//             return res.status(500).json({ message: 'Internal server error' });
+//         }
+
+//         if (data) {
+//             // Cache hit
+//             console.log('Cache hit:', cacheKey); // DEGUB 
+//             res.json(JSON.parse(data));
+//         } else {
+//             // Cache miss
+//             console.log('Cache miss:', cacheKey); // DEBUG 
+//             try {
+//                 const response = await fetch('https://api.deezer.com/chart');
+//                 const deezerData = await response.json();
+
+//                 console.log("deezerData: ", deezerData) // DEGUB 
+
+//                 // Extract necessary data 
+//                 const musicData = deezerData.tracks.data.map(track => ({
+//                     id: track.id,
+//                     title: track.title,
+//                     description: track.artist.name,
+//                     image: track.album.cover_medium
+//                 }));
+
+//                 console.log("deezerData: ", deezerData) // DEGUB
+
+//                 // Store data in cache with an expiration time (e.g., 1 hour)
+//                 redisClient.setex(cacheKey, 3600, JSON.stringify(musicData));
+
+//                 res.json(musicData);
+//             } catch (error) {
+//                 console.error('Error fetching data from Deezer:', error);
+//                 res.status(500).send('Error fetching data');
+//             }
+//         }
+//     });
+// });
+
 
 
 
