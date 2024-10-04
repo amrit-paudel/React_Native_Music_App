@@ -226,70 +226,16 @@ app.get('/api/music/nepalese', async (req, res) => {
         // Store data in Redis cache with expiration time (1 hour)
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(musicData));
 
-        // Return the fresh data
-        res.json(musicData);
+        // Return the fresh data 
+        res.json(musicData); 
 
-    } catch (error) {
+    } catch (error) { 
         console.error('Error fetching or caching data:', error);
         res.status(500).json({ message: 'Internal server error' });
-    }
+    } 
 });
 
 
-
-// app.get('/api/music/nepalese', async (req, res) => {
-//     const cacheKey = 'deezer_music_data_nepalese';
-
-//     redisClient.get(cacheKey, async (err, data) => {
-//         if (err) {
-//             console.error('Redis GET error:', err);
-//             return res.status(500).json({ message: 'Internal server error' });
-//         }
-
-//         if (data) {
-//             // Cache hit
-//             console.log('Cache hit:', cacheKey); // DEGUB 
-//             res.json(JSON.parse(data));
-//         } else {
-//             // Cache miss
-//             console.log('Cache miss:', cacheKey); // DEBUG 
-//             try {
-//                 const response = await fetch('https://api.deezer.com/chart');
-//                 const deezerData = await response.json();
-
-//                 console.log("deezerData: ", deezerData) // DEGUB 
-
-//                 // Extract necessary data 
-//                 const musicData = deezerData.tracks.data.map(track => ({
-//                     id: track.id,
-//                     title: track.title,
-//                     description: track.artist.name,
-//                     image: track.album.cover_medium
-//                 }));
-
-//                 console.log("deezerData: ", deezerData) // DEGUB
-
-//                 // Store data in cache with an expiration time (e.g., 1 hour)
-//                 redisClient.setex(cacheKey, 3600, JSON.stringify(musicData));
-
-//                 res.json(musicData);
-//             } catch (error) {
-//                 console.error('Error fetching data from Deezer:', error);
-//                 res.status(500).send('Error fetching data');
-//             }
-//         }
-//     });
-// });
-
-
-
-
-
-
-
-
-
-// server has to be listening at a certain port
 app.listen(5000, () => {
     console.log("Server has started at port: 5000")
 })
